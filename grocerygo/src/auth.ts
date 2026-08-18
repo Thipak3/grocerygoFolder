@@ -5,7 +5,16 @@ import bcrypt from "bcryptjs"
 import User from "./models/user.model"
 import Google from "next-auth/providers/google"
 
+const getCleanEnv = (val?: string): string => {
+  if (!val) return ""
+  return val.replace(/^["']|["']$/g, "").trim()
+}
+
+const googleClientId = getCleanEnv(process.env.AUTH_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID)
+const googleClientSecret = getCleanEnv(process.env.AUTH_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET)
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
@@ -41,60 +50,63 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
     }),
     Google({
-      clientId: process.env.AUTH_GOOGLE_CLIENT_ID,
-      clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET
+      clientId: googleClientId,
+      clientSecret: googleClientSecret
     })
   ],
   callbacks: {
-    // Runs on sign in
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        await connectDb()
-        let dbUser = await User.findOne({ email: user.email })
-        if (!dbUser) {
-          dbUser = await User.create({
-            name: user.name,
-            email: user.email,
-            image: user.image, // fixed casing: was "Image"
-          })
+        try {
+          await connectDb()
+          let dbUser = await User.findOne({ email: user.email })
+          if (!dbUser) {
+            dbUser = await User.create({
+              name: user.name,
+              email: user.email,
+              image: user.image,
+              role: "user"
+            })
+          }
+          user.id = dbUser._id.toString()
+          user.role = dbUser.role || "user"
+          user.mobile = dbUser.mobile ?? ""
+        } catch (error) {
+          console.error("Error during Google sign-in callback:", error)
+          return false
         }
-        user.id = dbUser._id.toString()
-        user.role = dbUser.role
-        user.mobile = dbUser.mobile ?? ""
       }
       return true
     },
 
     // Puts data into the token. Handles both initial sign-in and manual updates.
     async jwt({ token, user, trigger, session }) {
-  // Initial sign in
-  if (user) {
-    token.id = user.id.toString()
-    token.name = user.name
-    token.email = user.email
-    token.role = user.role
-    token.mobile = user.mobile
-  }
+      if (user) {
+        token.id = user.id.toString()
+        token.name = user.name
+        token.email = user.email
+        token.role = user.role
+        token.mobile = user.mobile
+      }
 
-  // Triggered by `update()` from the client (e.g. after role selection)
-  if (trigger === "update") {
-    if (session?.role) token.role = session.role
-    if (session?.mobile) token.mobile = session.mobile
-  }
+      if (trigger === "update") {
+        if (session?.role) token.role = session.role
+        if (session?.mobile) token.mobile = session.mobile
+      }
 
-  return token
-},
+      return token
+    },
 
-session({ session, token }) {
-  if (session.user) {
-    session.user.id = token.id as string
-    session.user.name = token.name as string
-    session.user.email = token.email as string
-    session.user.role = token.role as string
-    session.user.mobile = token.mobile as string
-  }
-  return session
-},
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string
+        session.user.name = token.name as string
+        session.user.email = token.email as string
+        session.user.role = token.role as string
+        session.user.mobile = token.mobile as string
+      }
+      return session
+    },
   },
   pages: {
     signIn: "/login",
@@ -105,4 +117,4 @@ session({ session, token }) {
     maxAge: 10 * 24 * 60 * 60
   },
   secret: process.env.AUTH_SECRET
-})
+})

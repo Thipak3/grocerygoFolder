@@ -11,13 +11,24 @@ type propType = {
 }
 
 function RegisterForm({ previousStep }: propType) {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true)
+      await signIn('google', { callbackUrl: '/', redirectTo: '/' })
+    } catch (err) {
+      console.error('Google sign in error:', err)
+      setGoogleLoading(false)
+    }
+  }
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -113,13 +124,19 @@ function RegisterForm({ previousStep }: propType) {
           OR
           <span className='flex-1 h-px bg-gray-200'></span>
         </div>
-        <div
-          className='w-full flex items-center justify-center gap-3 border border-gray-300 hover:bg-gray-50 py-3 rounded-xl text-gray-700 font-medium transition-all duration-200 cursor-pointer'
-          onClick={() => signIn('google', { callbackUrl: '/' })}
+        <button
+          type='button'
+          disabled={googleLoading || loading}
+          onClick={handleGoogleSignIn}
+          className='w-full flex items-center justify-center gap-3 border border-gray-300 hover:bg-gray-50 py-3 rounded-xl text-gray-700 font-medium transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'
         >
-          <img src='https://www.google.com/favicon.ico' width={20} height={20} alt='google' />
-          Continue with Google
-        </div>
+          {googleLoading ? (
+            <Loader2 className='w-5 h-5 animate-spin text-green-600' />
+          ) : (
+            <img src='https://www.google.com/favicon.ico' width={20} height={20} alt='google' />
+          )}
+          {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+        </button>
       </motion.form>
       <p
         className='cursor-pointer text-gray-600 mt-6 text-sm flex items-center gap-1'
