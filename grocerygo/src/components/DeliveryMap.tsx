@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, useMap, Popup } from 'react-leaflet'
 import L, { LatLngExpression } from 'leaflet'
-import { MapPin, Navigation } from 'lucide-react'
+import { Navigation } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 
 // Custom marker icons using public CDN icons
@@ -36,10 +36,10 @@ function MapCenterController({ coords }: { coords: [number, number][] }) {
 interface DeliveryMapProps {
     customerLat: number
     customerLng: number
-    customerName: string
+    customerName?: string
 }
 
-export default function DeliveryMap({ customerLat, customerLng, customerName }: DeliveryMapProps) {
+export default function DeliveryMap({ customerLat, customerLng, customerName = "Customer" }: DeliveryMapProps) {
     const [myLocation, setMyLocation] = useState<[number, number] | null>(null)
 
     useEffect(() => {
@@ -95,7 +95,9 @@ export default function DeliveryMap({ customerLat, customerLng, customerName }: 
                 />
                 
                 {/* Customer Marker */}
-                <Marker position={customerLocation as LatLngExpression} icon={customerIcon} />
+                <Marker position={customerLocation as LatLngExpression} icon={customerIcon}>
+                    <Popup>{customerName}</Popup>
+                </Marker>
                 
                 {/* Delivery Boy Marker */}
                 {myLocation && (

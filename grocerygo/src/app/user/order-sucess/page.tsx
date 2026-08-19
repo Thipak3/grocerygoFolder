@@ -10,11 +10,10 @@ function OrderSuccessContent() {
     const searchParams = useSearchParams()
     const orderId = searchParams.get('orderId')
     const sessionId = searchParams.get('session_id')
-    const [verifying, setVerifying] = useState(false)
+    const [verifying, setVerifying] = useState(() => Boolean(orderId && sessionId))
 
     useEffect(() => {
         if (orderId && sessionId) {
-            setVerifying(true)
             axios.get(`/api/user/verify-payment?orderId=${orderId}&session_id=${sessionId}`)
                 .then(() => {
                     console.log('Payment verified successfully')

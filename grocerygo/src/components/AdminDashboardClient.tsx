@@ -23,7 +23,7 @@ type propType = {
 
 function AdminDashboardClient({ earning, stats, chartData }: propType) {
 
-    const [filter, setFilter] = useState<"today" | "sevenDays" | "total">()
+    const [filter, setFilter] = useState<"today" | "sevenDays" | "total">("total")
 
     const currentEarning = filter === "today" ? earning.today
         : filter === "sevenDays" ? earning.sevenDays
@@ -46,7 +46,7 @@ function AdminDashboardClient({ earning, stats, chartData }: propType) {
 
                 <select className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 
         focus:ring-green-500 outline-none transition w-full sm:w-auto"
-                    onChange={(e) => setFilter(e.target.value as any)}
+                    onChange={(e) => setFilter(e.target.value as "today" | "sevenDays" | "total")}
                     value={filter}
                 >
                     <option value="total">Total</option>

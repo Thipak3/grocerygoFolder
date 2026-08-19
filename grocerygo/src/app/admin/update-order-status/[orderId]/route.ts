@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ ord
 
     }
     order.status = status
-    let deliveryBoysPayload: any = []
+    let deliveryBoysPayload: Array<{ id: unknown; name: string; mobile?: string; latitude: number; longitude: number }> = []
     if (status === "out of delivery" && !order.assignment) {
       const { latitude, longitude } = order.address
       const nearByDeliveryBoys = await User.find({

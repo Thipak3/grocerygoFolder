@@ -4,11 +4,8 @@ import { AnimatePresence } from 'motion/react'
 import React, { useEffect, useState } from 'react'
 import { motion } from "motion/react"
 import Image from "next/image"
-import { useSelector } from 'react-redux'
-import { RootState } from '@/redux/store'
 
 function HeroSection() {
-  const { userData } = useSelector((state: RootState) => state.user)
 
   const slides = [
     {
@@ -43,7 +40,7 @@ function HeroSection() {
       setCurrent(prev => (prev + 1) % slides.length)
     }, 4000)
     return () => clearInterval(timer)
-  }, [])
+  }, [slides.length])
   return (
     <div className='relative w-[98%] mx-auto mt-32 h-[80vh] rounded-3xl overflow-hidden shadow-2xl'>
       <AnimatePresence mode='wait'>

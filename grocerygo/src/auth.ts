@@ -107,6 +107,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session
     },
+
+    redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      try {
+        const urlObj = new URL(url)
+        const baseObj = new URL(baseUrl)
+        if (urlObj.hostname === "localhost" && baseObj.hostname !== "localhost") {
+          urlObj.protocol = baseObj.protocol
+          urlObj.host = baseObj.host
+          return urlObj.toString()
+        }
+      } catch {}
+      return url
+    },
   },
   pages: {
     signIn: "/login",

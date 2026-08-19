@@ -40,7 +40,7 @@ function LoginFormContent() {
   const handleGoogleSignIn = async () => {
     try {
       setGoogleLoading(true)
-      await signIn("google", { callbackUrl: "/", redirectTo: "/" })
+      await signIn("google", { redirectTo: "/" })
     } catch (err) {
       console.error("Google sign in error:", err)
       setGoogleLoading(false)

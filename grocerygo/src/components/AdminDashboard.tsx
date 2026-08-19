@@ -1,8 +1,5 @@
 import React from 'react'
 import connectDb from '@/lib/db'
-import Grocery from '@/models/grocery.model'
-import Link from 'next/link'
-import { PlusCircle, Package } from 'lucide-react'
 import Order from '@/models/order.model'
 import User from '@/models/user.model'
 import AdminDashboardClient from './AdminDashboardClient'
@@ -13,7 +10,6 @@ async function AdminDashboard() {
 
   const orders = await Order.find({});
   const users = await User.find({ role: "user" });
-  const groceries = await Grocery.find({});
 
   const totalOrders = orders.length;
   const totalCustomers = users.length;

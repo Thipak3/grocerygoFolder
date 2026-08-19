@@ -1,12 +1,12 @@
 'use client'
 import { getSocket } from '@/lib/socket'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 
 function GeoUpdate({ userId }: { userId: string }) {
     useEffect(() => {
         if (!userId) return
         
-        let socket = getSocket()
+        const socket = getSocket()
         socket.emit("identity", userId)
 
         if (!navigator.geolocation) return

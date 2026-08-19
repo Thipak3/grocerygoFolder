@@ -1,34 +1,16 @@
 'use client'
-
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import Link from 'next/link'
 import { ArrowLeft, Package, Loader2 } from 'lucide-react'
-import { motion } from 'motion/react'
 import { getSocket } from '@/lib/socket'
 
 import UserOrderCard from '@/components/UserOrderCard'
 import Footer from '@/components/footer'
-
-interface OrderItem {
-  name: string
-  price: number
-  quantity: number
-  unit: string
-}
-
-interface Order {
-  _id: string
-  items: OrderItem[]
-  totalAmount: number
-  paymentMethod: string
-  isPaid: boolean
-  status: string
-  createdAt: string
-}
+import { IOrder } from '@/models/order.model'
 
 function MyOrder() {
-  const [orders, setOrders] = useState<Order[]>([])
+  const [orders, setOrders] = useState<IOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -50,7 +32,7 @@ function MyOrder() {
     const socket = getSocket()
     socket.on("order-assigned", ({ orderId, assignedDeliveryBoy }) => {
       setOrders((prev) => prev?.map(o =>
-        o._id === orderId ? { ...o, assignedDeliveryBoy } : o
+        o._id?.toString() === orderId ? { ...o, assignedDeliveryBoy } : o
       ))
     })
     return () => {
@@ -90,7 +72,7 @@ function MyOrder() {
 
         <div className="space-y-4">
           {orders.map((order) => (
-            <UserOrderCard key={order._id} order={order as any} />
+            <UserOrderCard key={order._id?.toString()} order={order} />
           ))}
         </div>
       </div>

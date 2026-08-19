@@ -1,0 +1,34 @@
+# Root gitignore
+
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# env files
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Next.js
+grocerygo/.next/
+grocerygo/out/
+grocerygo/build/
+
+# Misc scratch files created during dev
+grocerygo/find_view_grocery.js
+grocerygo/found_content_*.json
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+*.pem

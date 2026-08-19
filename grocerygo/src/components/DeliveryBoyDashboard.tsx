@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import axios from 'axios'
 import { getSocket } from '@/lib/socket'
 import { useSelector } from 'react-redux'
@@ -19,17 +19,31 @@ const LiveMap = dynamic(() => import('./liveMap'), {
 import DeliveryChat from './DeliveryChat'
 
 import { Loader } from 'lucide-react'
-import { div } from 'motion/react-client'
 
 interface ILocation {
   latitude: number,
   longitude: number
 }
 
+interface IAssignment {
+  _id: string
+  order: {
+    _id: string
+    address?: {
+      fullAddress?: string
+      latitude?: number
+      longitude?: number
+    }
+    deliveryOtpVerification?: boolean
+  }
+  assignedTo?: string | { _id: string }
+  status: string
+}
+
 function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
-  const [assignments, setAssignments] = useState<any[]>([])
+  const [assignments, setAssignments] = useState<IAssignment[]>([])
   const { userData } = useSelector((state: RootState) => state.user)
-  const [activeOrder, setActiveOrder] = useState<any>(null)
+  const [activeOrder, setActiveOrder] = useState<IAssignment | null>(null)
   const [showOtpBox, setShowOtpBox] = useState(false)
   const [otpError, setOtpError] = useState("")
   const [sendOtpLoading, setSendOtpLoading] = useState(false)
@@ -46,7 +60,7 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
     longitude: 0
   })
 
-  const fetchAssignment = async () => {
+  const fetchAssignment = useCallback(async () => {
     try {
       const result = await axios.get("/api/delivery/getassignments")
       if (result.data) {
@@ -55,7 +69,24 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
     } catch (error) {
       console.log(error)
     }
-  }
+  }, [])
+
+  const fetchCurrentOrder = useCallback(async () => {
+    try {
+      const result = await axios.get("/api/delivery/current-order")
+      if (result.data.active) {
+        setActiveOrder(result.data.assignment)
+        if (result.data.assignment?.order?.address?.latitude && result.data.assignment?.order?.address?.longitude) {
+          setUserLocation({
+            latitude: result.data.assignment.order.address.latitude,
+            longitude: result.data.assignment.order.address.longitude,
+          })
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }, [])
 
   useEffect(() => {
     const socket = getSocket()
@@ -83,35 +114,22 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
 
     return () => navigator.geolocation.clearWatch(watcher)
   }, [userData?._id])
-  useEffect((): any => {
+
+  useEffect(() => {
     const socket = getSocket()
-    socket.on("new assignment", (deliveryAssignment) => {
+    socket.on("new assignment", (deliveryAssignment: IAssignment) => {
       setAssignments((prev) => [...prev, deliveryAssignment])
     })
     return () => {
       socket.off("new assignment")
     }
   }, [])
+
   const handleAccept = async (id: string) => {
     try {
       await axios.post('/api/delivery/accept', { assignmentId: id })
-      fetchAssignment()
-         fetchCurrentOrder()
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  const fetchCurrentOrder = async () => {
-    try {
-      const result = await axios.get("/api/delivery/current-order")
-      if (result.data.active) {
-        setActiveOrder(result.data.assignment)
-        const addr = result.data.assignment?.order?.address
-        setUserLocation({
-          latitude: result.data.assignment.order.address.latitude,
-          longitude: result.data.assignment.order.address.longitude,
-        })
-      }
+      void fetchAssignment()
+      void fetchCurrentOrder()
     } catch (error) {
       console.log(error)
     }
@@ -119,7 +137,7 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
 
   useEffect(() => {
     const socket = getSocket()
-    socket.on("update-deliveryBoy-location", ({ userId, location }) => {
+    socket.on("update-deliveryBoy-location", ({ location }: { userId?: string; location: { coordinates: number[] } }) => {
       setDeliveryBoyLocation({
         latitude: location.coordinates[1],
         longitude: location.coordinates[0]
@@ -131,24 +149,30 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
   }, [])
 
   useEffect(() => {
-
-    fetchAssignment()
-    fetchCurrentOrder()
-  }, [userData])
+    if (userData) {
+      const loadData = async () => {
+        await fetchAssignment()
+        await fetchCurrentOrder()
+      }
+      void loadData()
+    }
+  }, [userData, fetchAssignment, fetchCurrentOrder])
 
   const sendOtp = async () => {
+    if (!activeOrder) return
     setSendOtpLoading(true)
     try {
       const result = await axios.post("/api/delivery/otp/send", { orderId: activeOrder.order._id })
       console.log(result.data)
       setShowOtpBox(true)
       setSendOtpLoading(false)
-    } catch (error) {
+    } catch {
       setSendOtpLoading(false)
       setOtpError("Failed to send OTP")
     }
   }
   const verifyOtp = async () => {
+    if (!activeOrder) return
     setVerifyOtpLoading(true)
     try {
       const result = await axios.post("/api/delivery/otp/verify", { orderId: activeOrder.order._id, otp: otp })
@@ -157,7 +181,7 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
       setVerifyOtpLoading(false)
       await fetchCurrentOrder()
       window.location.reload()
-    } catch (error) {
+    } catch {
       setVerifyOtpLoading(false)
       setOtpError("Otp Verification Error")
     }
@@ -179,7 +203,7 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
           <p className='text-gray-500 mb-5'>Stay online to receive new orders</p>
 
           <div className='bg-white rounded-xl shadow-xl p-6'>
-            <h2 className='font-medium text-green-700 mb-2'>Today's Performance</h2>
+            <h2 className='font-medium text-green-700 mb-2'>Today&apos;s Performance</h2>
             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={todayEarnings}>
                                     <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
@@ -216,7 +240,7 @@ function DeliveryBoyDashboard({ earning = 0 }: { earning?: number }) {
           </div>
           <DeliveryChat
             orderId={activeOrder.order._id?.toString() }
-            deliveryBoyId={userData?._id?.toString() || activeOrder?.assignedTo?._id?.toString() || activeOrder?.assignedTo?.toString() || ""}
+            deliveryBoyId={userData?._id?.toString() || (activeOrder?.assignedTo && typeof activeOrder.assignedTo === 'object' ? activeOrder.assignedTo._id.toString() : activeOrder?.assignedTo?.toString()) || ""}
           />
           <div className='mt-6 bg-white rounded-xl border shadow p-6'>
             {!activeOrder.order.deliveryOtpVerification && !showOtpBox && (

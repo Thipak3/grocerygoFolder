@@ -3,7 +3,7 @@
 import { BoxesIcon, ClipboardCheck, LogOut, Menu, Package, PlusCircle, Search, ShoppingCartIcon, User, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Image from 'next/image'
 import { AnimatePresence, motion } from 'motion/react'
 import { signOut } from 'next-auth/react'
@@ -26,14 +26,14 @@ function Nav({ user }: { user: IUser }) {
   const profileDropDown = useRef<HTMLDivElement>(null)
   const [searchbarOpen, setSearchBarOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
   const [search, setSearch] = useState("")
   const router = useRouter()
   const { cartData } = useSelector((state: RootState) => state.cart)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

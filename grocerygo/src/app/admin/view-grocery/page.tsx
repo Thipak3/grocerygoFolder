@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import Image from 'next/image'
-import Link from 'next/link'
 import { ArrowLeft, Loader, Trash2, Pencil, Package, Search, X, Upload } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import mongoose from 'mongoose'

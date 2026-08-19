@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
+import { IUser } from "./user.model";
 
 export interface IOrder {
     _id?: mongoose.Types.ObjectId;
-    user?: mongoose.Types.ObjectId;
+    user?: mongoose.Types.ObjectId | IUser;
     items: {
         grocery: mongoose.Types.ObjectId;
         name: string;
@@ -26,12 +27,12 @@ export interface IOrder {
         longitude: number;
     }
     assingnment?: mongoose.Types.ObjectId
-    assignedDeliveryBoy?: mongoose.Types.ObjectId
+    assignedDeliveryBoy?: mongoose.Types.ObjectId | IUser
     status: "pending" | "out_for_delivery" | "delivered";
     createdAt?: Date;
     updatedAt?: Date;
     deliveryOtp: string | null
-    deliveryOtpVerification: Boolean 
+    deliveryOtpVerification: boolean
     deliveredAt: Date
 }
 

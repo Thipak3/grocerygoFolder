@@ -10,42 +10,13 @@ import { getSocket } from '@/lib/socket'
 import mongoose from 'mongoose'
 import { IUser } from '@/models/user.model'
 import { useRouter } from 'next/navigation'
-interface IOrder {
-  _id?: mongoose.Types.ObjectId;
-  user?: mongoose.Types.ObjectId;
-  items: {
-    grocery: mongoose.Types.ObjectId;
-    name: string;
-    price: number;
-    image: string;
-    unit: string;
-    quantity: number;
-  }[];
-  isPaid: boolean,
-
-  totalAmount: number;
-  paymentMethod: "cod" | "online";
-  address: {
-    fullName: string;
-    mobile: string;
-    city: string;
-    state: string;
-    pincode: string;
-    fullAddress: string;
-    latitude: number;
-    longitude: number;
-  }
-  assingnment?: mongoose.Types.ObjectId
-  assignedDeliveryBoy?: IUser
-  status: "pending" | "out_for_delivery" | "delivered";
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+import { IOrder } from '@/models/order.model'
 
 function UserOrderCard({ order }: { order: IOrder }) {
   const [expanded, setExpanded] = useState(false)
   const [status, setStatus] = useState(order.status)
   const router = useRouter()
+  const deliveryBoy = order.assignedDeliveryBoy && typeof order.assignedDeliveryBoy === 'object' && 'name' in order.assignedDeliveryBoy ? (order.assignedDeliveryBoy as IUser) : null
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -60,16 +31,21 @@ function UserOrderCard({ order }: { order: IOrder }) {
         return "bg-gray-100 text-gray-700 border-gray-300"
     }
   }
-  useEffect((): any => {
+  useEffect(() => {
     const socket = getSocket()
-    socket.on('order-status-updated', (data) => {
-      if (data.orderId.toString() === order?._id!.toString()) {
-        setStatus(data.status)
+    const handleStatusUpdate = (data: { orderId: string | number; status: string }) => {
+      if (order?._id && data.orderId.toString() === order._id.toString()) {
+        const newStatus = data.status
+        if (newStatus === "pending" || newStatus === "out_for_delivery" || newStatus === "delivered") {
+          setStatus(newStatus)
+        }
       }
-    })
-    return () => socket.off('order-status-updated')
-
-  }, [])
+    }
+    socket.on('order-status-updated', handleStatusUpdate)
+    return () => {
+      socket.off('order-status-updated', handleStatusUpdate)
+    }
+  }, [order?._id])
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -120,16 +96,16 @@ function UserOrderCard({ order }: { order: IOrder }) {
             Online Payment
           </div>
         }
-        {order.assignedDeliveryBoy && (
+        {deliveryBoy && (
           <div className='mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between'>
             <div className='flex items-center gap-3 text-sm text-gray-700'>
               <UserCheck className='text-blue-600' size={18} />
               <div className='font-semibold text-gray-800'>
-                <p>Assigned to : <span>{order.assignedDeliveryBoy?.name}</span></p>
-                <p className='text-xs text-gray-600'> 📞 +91 {order.assignedDeliveryBoy.mobile}</p>
+                <p>Assigned to : <span>{deliveryBoy.name}</span></p>
+                <p className='text-xs text-gray-600'> 📞 +91 {deliveryBoy.mobile}</p>
               </div>
             </div>
-            <a href={`tel:${order.assignedDeliveryBoy?.mobile}`} className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">Call</a>
+            <a href={`tel:${deliveryBoy.mobile}`} className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">Call</a>
           </div>
         )}
 

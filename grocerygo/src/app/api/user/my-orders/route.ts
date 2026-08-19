@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import connectDb from "@/lib/db";
 import Order from "@/models/order.model";
 import { NextResponse } from "next/server";
-import User from "@/models/user.model";
+import "@/models/user.model";
 
 export async function GET() {
   try {

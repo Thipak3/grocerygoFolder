@@ -20,7 +20,7 @@ export interface IUser {
     };
   },
   socketId: string | null
-  isOnline: Boolean
+  isOnline: boolean
 }
 const userSchema = new mongoose.Schema<IUser>({
   name: {

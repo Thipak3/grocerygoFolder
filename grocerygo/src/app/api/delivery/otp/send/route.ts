@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
 
         // Try to send email but don't fail if email config is missing
         try {
-            const email = (order.user as any)?.email
+            const userObj = order.user as { email?: string } | undefined
+            const email = userObj?.email
             if (email && process.env.EMAIL && process.env.PASS) {
                 const { sendMail } = await import("@/lib/mailer")
                 await sendMail(

@@ -5,40 +5,8 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import AdminOrderCard from "@/components/AdminOrderCard"
 import { getSocket } from "@/lib/socket"
-import mongoose from "mongoose"
+import { IOrder } from "@/models/order.model"
 import { IUser } from "@/models/user.model"
-
-interface IOrder {
-    _id?: mongoose.Types.ObjectId;
-    user?: mongoose.Types.ObjectId;
-    items: {
-        grocery: mongoose.Types.ObjectId;
-        name: string;
-        price: number;
-        image: string;
-        unit: string;
-        quantity: number;
-    }[];
-    isPaid: boolean,
-
-    totalAmount: number;
-    paymentMethod: "cod" | "online";
-    address: {
-        fullName: string;
-        mobile: string;
-        city: string;
-        state: string;
-        pincode: string;
-        fullAddress: string;
-        latitude: number;
-        longitude: number;
-    }
-    assingnment?: mongoose.Types.ObjectId
-    assignedDeliveryBoy?: IUser
-    status: "pending" | "out_for_delivery" | "delivered";
-    createdAt?: Date;
-    updatedAt?: Date;
-}
 
 function MangaeOrders() {
     const [orders, setOrders] = useState<IOrder[]>([])
@@ -56,17 +24,17 @@ function MangaeOrders() {
         getOrders()
     }, [])
 
-    useEffect((): any => {
+    useEffect(() => {
         const socket = getSocket()
-        socket?.on("new-orders", (newOrder) => {
-            setOrders((prev) => [newOrder, ...prev!])
+        socket?.on("new-orders", (newOrder: IOrder) => {
+            setOrders((prev) => [newOrder, ...prev])
         })
-        socket.on("order-assigned", ({ orderId, assignedDeliveryBoy }) => {
+        socket.on("order-assigned", ({ orderId, assignedDeliveryBoy }: { orderId: string; assignedDeliveryBoy: IUser }) => {
             setOrders((prev) => prev.map((o) => (
-                o._id?.toString() === orderId ? { ...o, assignedDeliveryBoy } : o)))
+                o._id?.toString() === orderId ? { ...o, assignedDeliveryBoy: assignedDeliveryBoy._id } : o)))
         })
         return () => {
-            socket.off("new-order")
+            socket.off("new-orders")
             socket.off("order-assigned")
         }
     }, [])
@@ -89,7 +57,7 @@ function MangaeOrders() {
                 {orders && orders.map((order) => (
                     <AdminOrderCard
                         key={order._id?.toString()}
-                        order={order as any}
+                        order={order}
                         onStatusUpdate={(orderId, newStatus) => {
                             setOrders(prev => prev.map(o => o._id?.toString() === orderId ? { ...o, status: newStatus as IOrder['status'] } : o))
                         }}

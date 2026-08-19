@@ -31,10 +31,11 @@ export async function POST(req: Request) {
       { message: "location updated", user },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Update location error:", error);
+    const message = error instanceof Error ? error.message : "Internal error";
     return NextResponse.json(
-      { message: `update location error: ${error.message || error}` },
+      { message: `update location error: ${message}` },
       { status: 500 }
     );
   }

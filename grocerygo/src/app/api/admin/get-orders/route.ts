@@ -1,9 +1,8 @@
-import { auth } from "@/auth";
 import connectDb from "@/lib/db";
 import Order from "@/models/order.model";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     await connectDb();
     const orders = await Order.find({}).populate("user assignedDeliveryBoy").sort({ createdAt: -1 });
