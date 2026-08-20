@@ -23,7 +23,7 @@ function RegisterForm({ previousStep }: propType) {
   const handleGoogleSignIn = async () => {
     try {
       setGoogleLoading(true)
-      await signIn('google', { redirectTo: '/' })
+      await signIn('google', { callbackUrl: '/', redirectTo: '/' })
     } catch (err) {
       console.error('Google sign in error:', err)
       setGoogleLoading(false)
