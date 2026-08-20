@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react'
 import { motion } from "motion/react"
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { loginWithGoogle } from '@/actions/authActions'
 
 function LoginFormContent() {
   const [email, setEmail] = useState("")
@@ -40,7 +41,7 @@ function LoginFormContent() {
   const handleGoogleSignIn = async () => {
     try {
       setGoogleLoading(true)
-      await signIn("google", { callbackUrl: "/", redirectTo: "/" })
+      await loginWithGoogle()
     } catch (err) {
       console.error("Google sign in error:", err)
       setGoogleLoading(false)
