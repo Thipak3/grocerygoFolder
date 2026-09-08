@@ -5,7 +5,6 @@ import { motion } from 'motion/react'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { loginWithGoogle } from '@/actions/authActions'
 
 type propType = {
   previousStep: (s: number) => void
@@ -24,14 +23,8 @@ function RegisterForm({ previousStep }: propType) {
   const handleGoogleSignIn = async () => {
     try {
       setGoogleLoading(true)
-      const url = await loginWithGoogle()
-      if (url) {
-        window.location.href = url
-      }
-    } catch (err: any) {
-      if (err?.message?.includes("NEXT_REDIRECT") || err?.digest?.includes("NEXT_REDIRECT")) {
-        return
-      }
+      await signIn('google', { callbackUrl: '/' })
+    } catch (err) {
       console.error('Google sign in error:', err)
       setGoogleLoading(false)
     }
