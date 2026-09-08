@@ -8,27 +8,59 @@ import AdminDashboardClient from './AdminDashboardClient'
 async function AdminDashboard() {
   await connectDb();
 
-  const orders = await Order.find({});
-  const users = await User.find({ role: "user" });
-
-  const totalOrders = orders.length;
-  const totalCustomers = users.length;
-  const pendingDeliveries = orders.filter((o) => o.status === "pending").length;
-  const totalRevenue = orders.reduce(
-    (sum, o) => sum + (o.totalAmount || 0), 0)
+  const totalCustomers = await User.countDocuments({ role: "user" });
 
   const today = new Date()
   const startOfToday = new Date(today)
   startOfToday.setHours(0, 0, 0, 0)
 
-  const sevenDaysAgo = new Date()
+  const sevenDaysAgo = new Date(today)
   sevenDaysAgo.setDate(today.getDate() - 6)
+  sevenDaysAgo.setHours(0, 0, 0, 0)
 
-  const todayOrders = orders.filter((o) => new Date(o.createdAt) >= startOfToday)
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
+  const aggResult = await Order.aggregate([
+    {
+      $facet: {
+        overall: [
+          {
+            $group: {
+              _id: null,
+              totalOrders: { $sum: 1 },
+              totalRevenue: { $sum: { $ifNull: ["$totalAmount", 0] } },
+              pendingDeliveries: {
+                $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] }
+              }
+            }
+          }
+        ],
+        todayStats: [
+          { $match: { createdAt: { $gte: startOfToday } } },
+          { $group: { _id: null, revenue: { $sum: { $ifNull: ["$totalAmount", 0] } } } }
+        ],
+        sevenDaysStats: [
+          { $match: { createdAt: { $gte: sevenDaysAgo } } },
+          { $group: { _id: null, revenue: { $sum: { $ifNull: ["$totalAmount", 0] } } } }
+        ],
+        chartStats: [
+          { $match: { createdAt: { $gte: sevenDaysAgo } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+              ordersCount: { $sum: 1 }
+            }
+          }
+        ]
+      }
+    }
+  ]);
 
-  const sevenDaysOrders = orders.filter((o) => new Date(o.createdAt) >= sevenDaysAgo)
-  const sevenDaysRevenue = sevenDaysOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
+  const data = aggResult[0];
+  const totalOrders = data.overall[0]?.totalOrders || 0;
+  const totalRevenue = data.overall[0]?.totalRevenue || 0;
+  const pendingDeliveries = data.overall[0]?.pendingDeliveries || 0;
+  
+  const todayRevenue = data.todayStats[0]?.revenue || 0;
+  const sevenDaysRevenue = data.sevenDaysStats[0]?.revenue || 0;
 
   const stats = [
     { title: "Total Orders", value: totalOrders },
@@ -38,21 +70,24 @@ async function AdminDashboard() {
   ];
 
   const chartData = []
+  const chartMap = new Map();
+  data.chartStats.forEach((stat: any) => {
+    chartMap.set(stat._id, stat.ordersCount);
+  });
 
   for (let i = 6; i >= 0; i--) {
-    const date = new Date();
+    const date = new Date(today);
     date.setDate(date.getDate() - i);
     date.setHours(0, 0, 0, 0);
 
-    const nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
-
-
-    const ordersCount = orders.filter((o) => new Date(o.createdAt) >= date && new Date(o.createdAt) <= nextDay).length
+    // Format date string to match MongoDB UTC output (%Y-%m-%d)
+    const dateStr = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+      .toISOString()
+      .split('T')[0];
 
     chartData.push({
       day: date.toLocaleDateString("en-us", { weekday: "short" }),
-      orders: ordersCount
+      orders: chartMap.get(dateStr) || 0
     })
   }
 

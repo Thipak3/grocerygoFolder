@@ -3,5 +3,6 @@
 import { signIn } from "@/auth"
 
 export async function loginWithGoogle() {
-  await signIn("google", { redirectTo: "/" })
+  const url = await signIn("google", { redirect: false, redirectTo: "/" })
+  return url
 }

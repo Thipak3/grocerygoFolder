@@ -3,6 +3,7 @@ import uploadOnCloudinary from "@/lib/cloudinary";
 import connectDb from "@/lib/db";
 import Grocery from "@/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(grocery, { status: 201 });
 
   } catch (error) {
-    console.error("ADD GROCERY ERROR:", error);
+    log.error("ADD GROCERY ERROR", error);
     const message =
       error instanceof Error
         ? error.message

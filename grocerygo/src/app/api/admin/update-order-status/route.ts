@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import connectDb from "@/lib/db";
 import Order from "@/models/order.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {
-    console.error("UPDATE ORDER STATUS ERROR:", error);
+    log.error("UPDATE ORDER STATUS ERROR", error);
     return NextResponse.json(
       { message: `Update order status error: ${error instanceof Error ? error.message : error}` },
       { status: 500 }

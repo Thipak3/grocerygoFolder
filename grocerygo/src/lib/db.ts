@@ -1,5 +1,7 @@
 import dns from "dns"
 import mongoose from "mongoose"
+import { env } from "./env"
+import { log } from "./logger"
 
 // Fixes mongodb+srv DNS failures on Windows local development
 if (process.platform === "win32") {
@@ -12,7 +14,7 @@ if (!cached) {
 }
 
 const connectDb = async () => {
-  const mongodbUrl = process.env.MONGODB_URL
+  const mongodbUrl = env.MONGODB_URL
   if (!mongodbUrl) {
     throw new Error("MONGODB_URL is missing in environment variables")
   }
@@ -38,7 +40,7 @@ const connectDb = async () => {
     return conn
   } catch (error) {
     cached.promise = null
-    console.error("MongoDB connection failed:", error)
+    log.error("MongoDB connection failed", error)
     throw error
   }
 }

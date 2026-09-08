@@ -3,6 +3,7 @@ import uploadOnCloudinary from "@/lib/cloudinary";
 import connectDb from "@/lib/db";
 import Grocery from "@/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function PUT(req: NextRequest) {
   try {
@@ -46,7 +47,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updated, { status: 200 });
   } catch (error) {
-    console.error("EDIT GROCERY ERROR:", error);
+    log.error("EDIT GROCERY ERROR", error);
     const message =
       error instanceof Error ? error.message : "failed to edit grocery";
     return NextResponse.json({ message }, { status: 500 });

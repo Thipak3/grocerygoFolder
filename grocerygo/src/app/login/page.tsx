@@ -41,8 +41,14 @@ function LoginFormContent() {
   const handleGoogleSignIn = async () => {
     try {
       setGoogleLoading(true)
-      await loginWithGoogle()
-    } catch (err) {
+      const url = await loginWithGoogle()
+      if (url) {
+        window.location.href = url
+      }
+    } catch (err: any) {
+      if (err?.message?.includes("NEXT_REDIRECT") || err?.digest?.includes("NEXT_REDIRECT")) {
+        return
+      }
       console.error("Google sign in error:", err)
       setGoogleLoading(false)
     }

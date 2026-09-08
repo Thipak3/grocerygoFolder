@@ -3,6 +3,7 @@ import connectDb from "@/lib/db";
 import Message from "@/models/message.model";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
     try {
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
         )
 
     } catch (error) {
-        console.error("Get messages error:", error)
+        log.error("Get messages error", error)
         return NextResponse.json(
             { message: `get messages error ${error}` },
             { status: 500 }

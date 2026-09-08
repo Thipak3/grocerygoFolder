@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary'
+import { log } from '@/lib/logger'
 
 const uploadOnCloudinary = async (file: Blob): Promise<string | null> => {
   if (!file) return null;
@@ -11,7 +12,7 @@ const uploadOnCloudinary = async (file: Blob): Promise<string | null> => {
   });
 
   if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-    console.error("Missing Cloudinary env variables");
+    log.error("Missing Cloudinary env variables");
     return null;
   }
 
@@ -24,7 +25,7 @@ const uploadOnCloudinary = async (file: Blob): Promise<string | null> => {
         { resource_type: "auto" },
         (error, result) => {
           if (error) {
-            console.error("Cloudinary upload error:", error);
+            log.error("Cloudinary upload error", error);
             reject(error);
           } else {
             resolve(result?.secure_url ?? null);
@@ -35,7 +36,7 @@ const uploadOnCloudinary = async (file: Blob): Promise<string | null> => {
     });
 
   } catch (error) {
-    console.error("uploadOnCloudinary error:", error);
+    log.error("uploadOnCloudinary error", error);
     throw error;
   }
 }

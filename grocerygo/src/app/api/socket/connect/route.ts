@@ -1,6 +1,7 @@
 import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 
 export async function POST(req: NextRequest) {
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 200 })
   } catch (error) {
-    console.log(error)
+    log.error("Socket connect error", error)
     return NextResponse.json({ success: false }, { status: 500 })
 
   }

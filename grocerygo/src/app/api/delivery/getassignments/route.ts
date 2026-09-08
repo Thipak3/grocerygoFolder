@@ -3,6 +3,7 @@ import connectDb from "@/lib/db";
 import DeliveryAssignment from "@/models/deliveryAssignment.model";
 import Order from "@/models/order.model";
 import { NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -40,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json(plainAssignments, { status: 200 });
   } catch (error) {
-    console.error("GET ASSIGNMENTS ERROR:", error);
+    log.error("GET ASSIGNMENTS ERROR", error);
     return NextResponse.json(
       { message: `Error fetching assignments: ${error instanceof Error ? error.message : error}` },
       { status: 500 }

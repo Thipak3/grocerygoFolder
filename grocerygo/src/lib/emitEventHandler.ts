@@ -1,10 +1,12 @@
 import axios from 'axios'
+import { config } from "./config"
+import { log } from "./logger"
 
 async function emitEventHandler(event: string, data: unknown, socketId?: string) {
    try {
-      await axios.post(`${process.env.NEXT_PUBLIC_SOCKET_SERVER}/notify`, { socketId, event, data })
+      await axios.post(`${config.SOCKET_URL}/notify`, { socketId, event, data })
    } catch (error) {
-      console.log("Socket emit error:", error)
+      log.error("Socket emit error", error)
    }
 }
 export default emitEventHandler

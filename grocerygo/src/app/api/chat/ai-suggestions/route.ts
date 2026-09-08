@@ -1,13 +1,32 @@
 import connectDb from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { aiSuggestionSchema } from "@/schemas/chat.schema";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
     let role = "user"
     try {
+        // Rate limiting (IP-based)
+        const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
+        const { success } = await checkRateLimit(`ai-suggest:${ip}`, 10, "1 m");
+        if (!success) {
+            return NextResponse.json({ message: "Too many requests. Please try again later." }, { status: 429 });
+        }
+
         await connectDb()
         const body = await req.json()
-        role = body.role || "user"
-        const message = body.message || ""
+        const parsed = aiSuggestionSchema.safeParse(body)
+        
+        if (!parsed.success) {
+            return NextResponse.json(
+                { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+                { status: 400 }
+            )
+        }
+        
+        role = parsed.data.role;
+        const message = parsed.data.message;
         const apiKey = process.env.GEMINI_API_KEY?.trim() || ""
 
         if (!apiKey) {
@@ -55,7 +74,7 @@ Format: comma-separated list of 3 short phrases without numbers or quotes.`
         return NextResponse.json(suggestions, { status: 200 })
 
     } catch (error) {
-        console.error("AI suggestions error:", error)
+        log.error("AI suggestions error", error)
         const fallback = role === "user" 
             ? ["Where is my order?", "Please call me on arrival", "Thank you!"]
             : ["I am on my way", "I have reached your location", "Please share OTP"]

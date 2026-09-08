@@ -3,6 +3,7 @@ import connectDb from "@/lib/db";
 import DeliveryAssignment from "@/models/deliveryAssignment.model";
 import Order from "@/models/order.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: "Delivery accepted successfully", assignment }, { status: 200 });
   } catch (error) {
-    console.error("ACCEPT DELIVERY ERROR:", error);
+    log.error("ACCEPT DELIVERY ERROR", error);
     return NextResponse.json(
       { message: `Error accepting delivery: ${error instanceof Error ? error.message : error}` },
       { status: 500 }

@@ -4,6 +4,8 @@ import emitEventHandler from "@/lib/emitEventHandler";
 import Order from "@/models/order.model";
 import User from "@/models/user.model";
 import { NextRequest, NextResponse } from "next/server";
+import { orderSchema } from "@/schemas/order.schema";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,11 +19,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { userId, items, paymentMethod, totalAmount, address } = await req.json();
+    const body = await req.json();
+    const parsed = orderSchema.safeParse(body);
 
-    if (!items || !userId || !paymentMethod || totalAmount == null || !address) {
-      return NextResponse.json({ message: "All fields are required" }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
+
+    const { userId, items, paymentMethod, totalAmount, address } = parsed.data;
 
     if (userId !== session.user.id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
@@ -50,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newOrder, { status: 201 });
   } catch (error) {
-    console.error("Order creation error:", error);
+    log.error("Order creation error", error);
     return NextResponse.json({ message: "Error while placing order" }, { status: 500 });
   }
 }

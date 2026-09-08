@@ -5,13 +5,11 @@ import bcrypt from "bcryptjs"
 import User from "./models/user.model"
 import Google from "next-auth/providers/google"
 
-const getCleanEnv = (val?: string): string => {
-  if (!val) return ""
-  return val.replace(/^["']|["']$/g, "").trim()
-}
+import { env } from "./lib/env"
+import { log } from "./lib/logger"
 
-const googleClientId = getCleanEnv(process.env.AUTH_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID)
-const googleClientSecret = getCleanEnv(process.env.AUTH_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET)
+const googleClientId = env.AUTH_GOOGLE_CLIENT_ID
+const googleClientSecret = env.AUTH_GOOGLE_CLIENT_SECRET
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
@@ -72,7 +70,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.role = dbUser.role || "user"
           user.mobile = dbUser.mobile ?? ""
         } catch (error) {
-          console.error("Error during Google sign-in callback:", error)
+          log.error("Error during Google sign-in callback", error)
           return false
         }
       }
@@ -130,5 +128,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
     maxAge: 10 * 24 * 60 * 60
   },
-  secret: process.env.AUTH_SECRET
+  secret: env.AUTH_SECRET
 })

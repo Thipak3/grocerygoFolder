@@ -1,6 +1,7 @@
 import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import { NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error: unknown) {
-    console.error("Update location error:", error);
+    log.error("Update location error", error);
     const message = error instanceof Error ? error.message : "Internal error";
     return NextResponse.json(
       { message: `update location error: ${message}` },

@@ -3,7 +3,14 @@ import http from "http"
 import dotenv from "dotenv"
 import { Server } from "socket.io"
 import axios from "axios"
+import { log } from "./logger.js"
 dotenv.config()
+
+if (process.env.NODE_ENV === "production" && !process.env.NEXT_BASE_URL) {
+  throw new Error("FATAL: NEXT_BASE_URL is missing in environment variables.");
+}
+const NEXT_BASE_URL = process.env.NEXT_BASE_URL || "http://localhost:3000";
+
 const app = express()
 app.use(express.json())
 const server = http.createServer(app)
@@ -15,28 +22,28 @@ const io = new Server(server, {
   }
 })
 io.on("connection", (socket) => {
-  console.log("user connected", socket.id)
+  log.info("user connected", socket.id)
 
   socket.on("identity", async (userId) => {
-    console.log(userId)
+    log.info("identity received", userId)
     try {
-      await axios.post(`${process.env.NEXT_BASE_URL || 'http://localhost:3000'}/api/socket/connect`, { userId, socketId: socket.id })
+      await axios.post(`${NEXT_BASE_URL}/api/socket/connect`, { userId, socketId: socket.id })
     } catch (err) {
-      console.error("socket connect err:", err.message)
+      log.error("socket connect err", err)
     }
   })
 
   socket.on("update-location", async ({ userId, latitude, longitude }) => {
-    console.log(`Updating location for user ${userId}:`, { latitude, longitude })
+    log.info(`Updating location for user ${userId}`, { latitude, longitude })
     const location = {
       type: "Point",
       coordinates: [longitude, latitude]
     }
 
     try {
-      await axios.post(`${process.env.NEXT_BASE_URL || 'http://localhost:3000'}/api/socket/update-location`, { userId, location })
+      await axios.post(`${NEXT_BASE_URL}/api/socket/update-location`, { userId, location })
     } catch (err) {
-      console.error("location update err:", err.message)
+      log.error("location update err", err)
     }
 
     io.emit("update-deliveryBoy-location", { userId, location })
@@ -45,24 +52,24 @@ io.on("connection", (socket) => {
   socket.on("join-room", (roomId) => {
     socket.join(roomId)
     const rooms = [...socket.rooms].join(", ")
-    console.log(`[Server] Socket ${socket.id} joined room: "${roomId}" | All rooms: [${rooms}]`)
+    log.info(`[Server] Socket ${socket.id} joined room: "${roomId}"`, { rooms })
   })
 
   socket.on("send-message", async (message) => {
-    console.log(`[Server] Received send-message from ${socket.id}:`, JSON.stringify(message))
+    log.info(`[Server] Received send-message from ${socket.id}`, message)
     const roomId = message.roomId
     const socketsInRoom = await io.in(roomId).fetchSockets()
-    console.log(`[Server] Sockets in room "${roomId}": ${socketsInRoom.map(s => s.id).join(", ") || "NONE"}`)
+    log.info(`[Server] Sockets in room "${roomId}"`, socketsInRoom.map(s => s.id))
     try {
-      await axios.post(`${process.env.NEXT_BASE_URL || 'http://localhost:3000'}/api/chat/save`, message)
+      await axios.post(`${NEXT_BASE_URL}/api/chat/save`, message)
     } catch (err) {
-      console.error("Save message err:", err.message)
+      log.error("Save message err", err)
     }
     io.to(roomId).emit("send-message", message)
-    console.log(`[Server] Emitted send-message to room "${roomId}"`)
+    log.info(`[Server] Emitted send-message to room "${roomId}"`)
   })
   socket.on("disconnect", () => {
-    console.log("user disconnected", socket.id)
+    log.info("user disconnected", socket.id)
   })
 })
 
@@ -79,5 +86,5 @@ app.post("/notify", (req, res) => {
 })
 
 server.listen(port, () => {
-  console.log("server started at", port)
+  log.info("server started at", port)
 })

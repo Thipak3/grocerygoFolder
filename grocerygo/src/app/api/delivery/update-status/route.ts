@@ -3,6 +3,7 @@ import connectDb from "@/lib/db";
 import DeliveryAssignment from "@/models/deliveryAssignment.model";
 import Order from "@/models/order.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: "Status updated", assignment }, { status: 200 });
   } catch (error) {
-    console.error("UPDATE DELIVERY STATUS ERROR:", error);
+    log.error("UPDATE DELIVERY STATUS ERROR", error);
     return NextResponse.json(
       { message: `Error updating status: ${error instanceof Error ? error.message : error}` },
       { status: 500 }

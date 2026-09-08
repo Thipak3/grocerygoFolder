@@ -3,6 +3,7 @@ import connectDb from "@/lib/db";
 import Order from "@/models/order.model";
 import Stripe from "stripe";
 import { auth } from "@/auth";
+import { log } from "@/lib/logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, isPaid: false }, { status: 200 });
   } catch (error) {
-    console.error("Payment verification error:", error);
+    log.error("Payment verification error", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

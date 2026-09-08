@@ -2,6 +2,7 @@ import connectDb from "@/lib/db";
 import Message from "@/models/message.model";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
     try {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
         )
 
     } catch (error) {
-        console.error("Save message error:", error)
+        log.error("Save message error", error)
         return NextResponse.json(
             { message: `save message error ${error}` },
             { status: 500 }

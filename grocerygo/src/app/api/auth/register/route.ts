@@ -2,29 +2,34 @@ import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { registerSchema } from "@/schemas/auth.schema";
 
 export async function POST(req: NextRequest) {
   try {
     await connectDb();
-    const { name, email, password } = await req.json();
+    // Rate limiting (IP-based)
+    const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
+    const { success, remaining } = await checkRateLimit(`register:${ip}`, 5, "15 m");
+    if (!success) {
+      return NextResponse.json({ message: "Too many registration attempts. Please try again later." }, { status: 429 });
+    }
 
-    if (!name?.trim() || !email?.trim() || !password) {
+    const body = await req.json();
+    const parsed = registerSchema.safeParse(body);
+
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Name, email, and password are required" },
+        { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
+
+    const { name, email, password } = parsed.data;
 
     const existUser = await User.findOne({ email });
     if (existUser) {
       return NextResponse.json({ message: "Email already exists" }, { status: 400 });
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { message: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);

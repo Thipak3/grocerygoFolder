@@ -1,15 +1,28 @@
 import nodemailer from "nodemailer"
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASS,
-    },
-});
+const host = process.env.SMTP_HOST;
+const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
+const user = process.env.SMTP_USER || process.env.EMAIL;
+const pass = process.env.SMTP_PASS || process.env.PASS;
+const secure = process.env.SMTP_SECURE === "true";
+
+const transporterConfig: any = host
+  ? {
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    }
+  : {
+      service: "gmail",
+      auth: { user, pass },
+    };
+
+const transporter = nodemailer.createTransport(transporterConfig);
+
 export const sendMail = async (to: string, subject: string, html: string) => {
     await transporter.sendMail({
-        from: `"Snapcart" <${process.env.EMAIL}>`,
+        from: `"GroceryGo" <${user}>`,
         to,
         subject,
         html

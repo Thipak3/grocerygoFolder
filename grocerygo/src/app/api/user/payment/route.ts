@@ -4,6 +4,8 @@ import connectDb from "@/lib/db";
 import User from "@/models/user.model";
 import Order from "@/models/order.model";
 import Stripe from "stripe";
+import { config } from "@/lib/config";
+import { log } from "@/lib/logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
       isPaid: false,
     });
 
-    const baseUrl = process.env.NEXT_BASE_URL || "http://localhost:3000";
+    const baseUrl = config.APP_URL;
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: checkoutSession.url }, { status: 200 });
   } catch (error) {
-    console.error("Stripe payment error:", error);
+    log.error("Stripe payment error", error);
     return NextResponse.json({ message: "Payment error" }, { status: 500 });
   }
 }

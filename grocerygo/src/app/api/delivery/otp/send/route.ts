@@ -1,11 +1,29 @@
 import connectDb from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import Order from "@/models/order.model";
+import { checkRateLimit } from "@/lib/rateLimit";
+import { sendOtpSchema } from "@/schemas/delivery.schema";
+import { log } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
     try {
+        // Rate limiting (IP-based)
+        const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
+        const { success } = await checkRateLimit(`otp:${ip}`, 3, "10 m");
+        if (!success) {
+            return NextResponse.json({ message: "Too many OTP requests. Please try again later." }, { status: 429 });
+        }
+
         await connectDb()
-        const { orderId } = await req.json()
+        const body = await req.json()
+        const parsed = sendOtpSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json(
+                { message: "Validation failed", errors: parsed.error.flatten().fieldErrors },
+                { status: 400 }
+            )
+        }
+        const { orderId } = parsed.data
         const order = await Order.findById(orderId).populate("user")
         if (!order) {
             return NextResponse.json(
@@ -30,7 +48,7 @@ export async function POST(req: NextRequest) {
                 )
             }
         } catch (mailErr) {
-            console.warn("Mail send failed (continuing):", mailErr)
+            log.warn("Mail send failed (continuing)", mailErr)
         }
 
         return NextResponse.json(
@@ -39,7 +57,7 @@ export async function POST(req: NextRequest) {
         )
 
     } catch (error) {
-        console.error("Send OTP error:", error)
+        log.error("Send OTP error", error)
         return NextResponse.json(
             { message: `send otp error ${error}` },
             { status: 500 }

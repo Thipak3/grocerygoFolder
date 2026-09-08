@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import connectDb from "@/lib/db";
 import Grocery from "@/models/grocery.model";
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ message: "grocery deleted successfully" }, { status: 200 });
   } catch (error) {
-    console.error("DELETE GROCERY ERROR:", error);
+    log.error("DELETE GROCERY ERROR", error);
     const message =
       error instanceof Error ? error.message : "failed to delete grocery";
     return NextResponse.json({ message }, { status: 500 });

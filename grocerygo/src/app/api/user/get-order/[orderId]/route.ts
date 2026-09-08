@@ -1,5 +1,6 @@
 import Order from "@/models/order.model"
 import { NextRequest, NextResponse } from "next/server"
+import { log } from "@/lib/logger"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ orderId: string }> }) {
     try {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
 
     }
     catch (error) {
-        console.log(error)
+        log.error("Error fetching order", error)
         return NextResponse.json({ message: "error while fetching order" }, { status: 500 })
     }
 }
