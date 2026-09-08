@@ -1,6 +1,44 @@
 import { getToken } from "next-auth/jwt"
 import { NextRequest, NextResponse } from "next/server"
 
+async function getAuthToken(req: NextRequest) {
+  const secret = process.env.AUTH_SECRET
+
+  // 1. Try __Secure-authjs.session-token (Production HTTPS)
+  let token = await getToken({
+    req,
+    secret,
+    secureCookie: true,
+    cookieName: "__Secure-authjs.session-token",
+  })
+
+  // 2. Try authjs.session-token (Localhost HTTP)
+  if (!token) {
+    token = await getToken({
+      req,
+      secret,
+      secureCookie: false,
+      cookieName: "authjs.session-token",
+    })
+  }
+
+  // 3. Try standard next-auth cookie fallbacks
+  if (!token) {
+    token = await getToken({
+      req,
+      secret,
+      secureCookie: true,
+      cookieName: "__Secure-next-auth.session-token",
+    })
+  }
+
+  if (!token) {
+    token = await getToken({ req, secret })
+  }
+
+  return token
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -10,7 +48,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET })
+  const token = await getAuthToken(req)
   
   if (!token) {
     const loginUrl = new URL("/login", req.url)
